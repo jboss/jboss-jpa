@@ -27,6 +27,7 @@ import javax.persistence.PersistenceContextType;
 
 import org.jboss.jpa.deployment.ManagedEntityManagerFactory;
 import org.jboss.jpa.deployment.PersistenceUnitDeployment;
+import org.jboss.jpa.spi.PersistenceUnit;
 import org.jboss.jpa.spi.PersistenceUnitRegistry;
 import org.jboss.jpa.tx.TransactionScopedEntityManager;
 import org.jboss.jpa.util.ExtendedEntityManager;
@@ -81,9 +82,8 @@ public class PersistenceContextRefResource implements Resource
    public Object getTarget()
    {
       boolean extendedPc = PersistenceContextType.EXTENDED.equals(pcRef.getPersistenceContextType());
-      ManagedEntityManagerFactory factory =
-      ((PersistenceUnitDeployment)PersistenceUnitRegistry.getPersistenceUnit(puSupplier)).getManagedFactory();
-      if (factory == null)
+      PersistenceUnit pu = PersistenceUnitRegistry.getPersistenceUnit(puSupplier);
+      if (pu == null)
       {
          throw new RuntimeException("could not find persistenceUnit " + puSupplier);
       }
@@ -95,6 +95,11 @@ public class PersistenceContextRefResource implements Resource
       }
       else
       {
+         ManagedEntityManagerFactory factory = ((PersistenceUnitDeployment)pu).getManagedFactory();
+         if (factory == null)
+         {
+            throw new RuntimeException("could not find EntityManagerFactory for persistenceUnit " + puSupplier);
+         }
          target = new TransactionScopedEntityManager(factory);
       }
       if(log.isTraceEnabled())  
