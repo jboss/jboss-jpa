@@ -104,7 +104,8 @@ public abstract class BasePersistenceUnitDependencyResolver implements Persisten
             throw new IllegalStateException("No strategy was set on " + this);
          String name = strategy.findPersistenceUnitSupplier(this, deploymentUnit, persistenceUnitName);
          if(name == null)
-            throw new IllegalArgumentException("Can't find a persistence unit named '" + persistenceUnitName + "' in " + deploymentUnit);
+            // keep the error message in sync with PersistenceUnitHandler.ERROR_MESSAGE_FAILED_TO_RESOVLE_PU
+            throw new IllegalArgumentException("failed to resolve persistence unit '" + persistenceUnitName + "' in " + deploymentUnit);
          return name;
       }
    }

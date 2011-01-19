@@ -98,7 +98,8 @@ public class PersistenceContextRefResource implements Resource
          PersistenceUnit pu = PersistenceUnitRegistry.getPersistenceUnit(puSupplier);
          if (pu == null)
          {
-            throw new RuntimeException("could not find persistenceUnit " + puSupplier);
+            // keep the error message in sync with PersistenceUnitHandler.ERROR_MESSAGE_FAILED_TO_RESOVLE_PU
+            throw new RuntimeException("failed to resolve persistence unit " + puSupplier);
          }
          ManagedEntityManagerFactory factory = ((PersistenceUnitDeployment)pu).getManagedFactory();
          if (factory == null)  // check for error here
