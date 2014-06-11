@@ -21,6 +21,8 @@
  */
 package org.jboss.jpa.resolvers.strategy;
 
+import java.util.Set;
+
 import org.jboss.beans.metadata.api.annotations.Inject;
 import org.jboss.deployers.structure.spi.DeploymentUnit;
 import org.jboss.jpa.javaee.JavaEEModuleInformer;
@@ -30,18 +32,18 @@ import org.jboss.metadata.jpa.spec.PersistenceUnitMetaData;
 
 /**
  * The spec compliant persistence unit search stragegy.
- * 
+ *
  * To allow injection by class it has a base name.
- * 
+ *
  * See EJB 3.0 6.2.2.
- * 
+ *
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  * @version $Revision: $
  */
 public abstract class BaseSearchStrategy implements SearchStrategy
 {
    private JavaEEModuleInformer javaEEModuleInformer;
-   
+
    public String findPersistenceUnitSupplier(PersistenceUnitDependencyResolver resolver, DeploymentUnit deploymentUnit, String persistenceUnitName)
    {
       String name = findWithinModule(resolver, deploymentUnit, persistenceUnitName, true);
@@ -49,13 +51,13 @@ public abstract class BaseSearchStrategy implements SearchStrategy
          name = findWithinApplication(resolver, deploymentUnit.getTopLevel(), persistenceUnitName);
       return name;
    }
-   
+
    protected String findWithinApplication(PersistenceUnitDependencyResolver resolver, DeploymentUnit unit, String persistenceUnitName)
    {
       String name = findWithinModule(resolver, unit, persistenceUnitName, false);
       if(name != null)
          return name;
-      
+
       for(DeploymentUnit child : unit.getChildren())
       {
          name = findWithinApplication(resolver, child, persistenceUnitName);
@@ -64,7 +66,7 @@ public abstract class BaseSearchStrategy implements SearchStrategy
       }
       return null;
    }
-   
+
    /*
     * When finding the default persistence unit, the first persistence unit encountered is returned.
     * TODO: Maybe the name of unscoped persistence units should be changed, so only one can be deployed anyway.
@@ -73,14 +75,18 @@ public abstract class BaseSearchStrategy implements SearchStrategy
    {
       if(!allowScoped && isScoped(unit))
          return null;
-      
-      PersistenceMetaData persistenceMetaData = unit.getAttachment(PersistenceMetaData.class);
-      if(persistenceMetaData == null)
+
+      Set<? extends PersistenceMetaData> set = unit.getAllMetaData(PersistenceMetaData.class);
+      if(set == null || set.isEmpty())
          return null;
-      for(PersistenceUnitMetaData persistenceUnit : persistenceMetaData.getPersistenceUnits())
+
+      for (PersistenceMetaData persistenceMetaData : set)
       {
-         if(persistenceUnitName == null || persistenceUnitName.length() == 0 || persistenceUnit.getName().equals(persistenceUnitName))
-            return resolver.createBeanName(unit, persistenceUnit.getName());
+         for(PersistenceUnitMetaData persistenceUnit : persistenceMetaData.getPersistenceUnits())
+         {
+            if(persistenceUnitName == null || persistenceUnitName.length() == 0 || persistenceUnit.getName().equals(persistenceUnitName))
+               return resolver.createBeanName(unit, persistenceUnit.getName());
+         }
       }
       return null;
    }
